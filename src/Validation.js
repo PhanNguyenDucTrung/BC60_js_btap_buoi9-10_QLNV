@@ -52,7 +52,6 @@ function Validation() {
     };
 
     this.positionCheck = function (spanId, mess) {
-        console.log(spanId);
         if (document.getElementById('position').selectedIndex === 0) {
             getEl(spanId).innerHTML = mess;
             return false;
@@ -83,6 +82,18 @@ function Validation() {
 
     this.workHoursCheck = function (value, spanId, mess, min, max) {
         if (!(Number(value) >= 80 && Number(value) <= 200)) {
+            getEl(spanId).innerHTML = mess;
+            return false;
+        }
+        getEl(spanId).innerHTML = '';
+        return true;
+    };
+
+    this.existingAccountCheck = function (value, employees, spanId, mess) {
+        console.log(value);
+        const isDuplicateAccount = employees.some(account => account.account === value);
+        // console.log(isDuplicateAccount);
+        if (isDuplicateAccount) {
             getEl(spanId).innerHTML = mess;
             return false;
         }

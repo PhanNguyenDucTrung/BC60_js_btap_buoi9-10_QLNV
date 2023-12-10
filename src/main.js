@@ -11,6 +11,15 @@ const employees = new Employees();
 const validation = new Validation();
 getLocalStorage();
 
+// default state: isEditing = false
+let isEditing = false;
+/**
+ * Logic:
+ * CLick edit button => set isEditing = true
+ * Click update button => set isEditing = false
+ * Nếu isEditing = true => Click btnAddEmployeeOpen => clearField() và set isEditing = false
+ */
+
 ////////////////////////////////////////
 function createEmployee(employeeId = null) {
     // Get user input from the form
@@ -27,23 +36,23 @@ function createEmployee(employeeId = null) {
     // Validation
     let isValid = true;
 
-    isValid &=
-        validation.emptyCheck(account, 'tbTKNV', 'Vui lòng nhập tên tài khoản.') &&
-        validation.stringLengthCheck(account, 'tbTKNV', 'Nhập tài khoản 4-6 ký tự', 4, 6);
-    console.log('kiem tra ten tai khoan', isValid);
+    if (!employeeId) {
+        isValid &=
+            validation.emptyCheck(account, 'tbTKNV', 'Vui lòng nhập tên tài khoản.') &&
+            validation.allNumberCheck(account, 'tbTKNV', 'Tài khoản không hợp lệ, vui lòng nhập số') &&
+            validation.stringLengthCheck(account, 'tbTKNV', 'Nhập tài khoản 4-6 ký số', 4, 6) &&
+            validation.existingAccountCheck(account, employees.arr, 'tbTKNV', 'Tài khoản đã tồn tại');
+    }
 
     isValid &=
         validation.emptyCheck(fullName, 'tbTen', 'Vui lòng nhập họ tên.') &&
         validation.allLetterCheck(fullName, 'tbTen', 'Tên không hợp lệ.');
-    console.log('kiem tra ten ', isValid);
 
     isValid &=
         validation.emptyCheck(email, 'tbEmail', 'Vui lòng nhập email') &&
         validation.emailFormatCheck(email, 'tbEmail', 'Email không hợp lệ');
-    console.log('kiem tra email', isValid);
 
     isValid &= validation.emptyCheck(password, 'tbMatKhau', 'Vui lòng nhập mật khẩu');
-    console.log('mat khau', isValid);
 
     isValid &=
         validation.emptyCheck(workDate, 'tbNgay', 'Vui lòng nhập ngày') &&
@@ -83,8 +92,9 @@ function handleDelete(employeeId) {
 }
 
 function handleEdit(employeeId) {
+    isEditing = true;
     const selectedEmployee = employees.editEmployee(employeeId);
-    console.log(selectedEmployee);
+    getEl('account').disabled = true;
     getEl('account').value = selectedEmployee.account;
     getEl('fullName').value = selectedEmployee.fullName;
     getEl('email').value = selectedEmployee.email;
@@ -105,8 +115,15 @@ function handleEdit(employeeId) {
 function handleUpdate(employeeId) {
     const updatedEmployee = createEmployee(employeeId);
 
-    if (!updatedEmployee) return;
+    if (!updatedEmployee) {
+        isEditing = true;
+        return;
+    }
 
+    $('#myModal').modal('hide');
+
+    isEditing = false;
+    clearField();
     employees.updateEmployee(updatedEmployee);
 
     setLocalStorage();
@@ -141,8 +158,11 @@ function renderUI(data) {
 
     getEl('tableDanhSach').innerHTML = content;
 
+    let currentlyEditedEmployeeId = null;
     getEl('tableDanhSach').addEventListener('click', event => {
         const target = event.target;
+
+        console.log(currentlyEditedEmployeeId);
 
         // Check if the clicked element is a delete button
         if (target.classList.contains('delete-btn')) {
@@ -154,17 +174,46 @@ function renderUI(data) {
         if (target.classList.contains('edit-btn')) {
             target.setAttribute('data-toggle', 'modal');
             target.setAttribute('data-target', '#myModal');
+
             const employeeId = target.dataset.id;
+
+            if (employeeId === currentlyEditedEmployeeId) {
+                return;
+            }
+
+            currentlyEditedEmployeeId = employeeId;
+
+            document.querySelectorAll('.sp-thongbao').forEach(span => {
+                if (span.innerHTML.trim() !== '') {
+                    span.style.display = 'none';
+                }
+            });
+
             handleEdit(employeeId);
         }
     });
 }
 
 // Events
+getEl('btnAddEmployeeOpen').addEventListener('click', () => {
+    if (isEditing) {
+        document.querySelectorAll('.sp-thongbao').forEach(span => {
+            if (span.innerHTML.trim() !== '') {
+                span.style.display = 'none';
+            }
+        });
+        getEl('btnUpdate').style.display = 'none';
+        getEl('btnAddEmployee').style.display = 'inline-block';
+        clearField();
+        isEditing = false;
+    }
+});
+
 getEl('btnAddEmployee').addEventListener('click', () => {
     const employee = createEmployee();
 
     if (!employee) return;
+
     employees.addEmployee(employee);
 
     setLocalStorage();
@@ -197,6 +246,18 @@ function getLocalStorage() {
         // Render the UI with the loaded data
         renderUI(employees.arr);
     }
+}
+
+function clearField() {
+    getEl('account').disabled = false;
+    getEl('account').value = '';
+    getEl('fullName').value = '';
+    getEl('email').value = '';
+    getEl('password').value = '';
+    getEl('workDate').value = '';
+    getEl('basicSalary').value = '';
+    getEl('position').value = getEl('position')[0].value;
+    getEl('workHours').value = '';
 }
 
 // (function () {
