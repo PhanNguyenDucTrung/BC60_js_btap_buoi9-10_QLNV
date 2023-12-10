@@ -37,11 +37,13 @@ function createEmployee(employeeId = null) {
     let isValid = true;
 
     if (!employeeId) {
+        console.log('is adding');
         isValid &=
             validation.emptyCheck(account, 'tbTKNV', 'Vui lòng nhập tên tài khoản.') &&
             validation.allNumberCheck(account, 'tbTKNV', 'Tài khoản không hợp lệ, vui lòng nhập số') &&
             validation.stringLengthCheck(account, 'tbTKNV', 'Nhập tài khoản 4-6 ký số', 4, 6) &&
             validation.existingAccountCheck(account, employees.arr, 'tbTKNV', 'Tài khoản đã tồn tại');
+        console.log('account check is when adding', isValid);
     }
 
     isValid &=
@@ -50,15 +52,33 @@ function createEmployee(employeeId = null) {
 
     isValid &=
         validation.emptyCheck(email, 'tbEmail', 'Vui lòng nhập email') &&
-        validation.emailFormatCheck(email, 'tbEmail', 'Email không hợp lệ');
+        validation.emailFormatCheck(email, 'tbEmail', 'Email không hợp lệ') &&
+        !isEditing
+            ? validation.existingEmailCheck(
+                  email,
+                  employees.arr,
+                  'tbEmail',
+                  'Email đã tồn tại, vui lòng nhập email khác'
+              )
+            : true;
 
-    isValid &= validation.emptyCheck(password, 'tbMatKhau', 'Vui lòng nhập mật khẩu');
+    isValid &=
+        validation.emptyCheck(password, 'tbMatKhau', 'Vui lòng nhập mật khẩu') &&
+        validation.stringLengthCheck(password, 'tbMatKhau', 'Nhập mật khẩu từ 6 - 10 ký tự', 6, 10) &&
+        validation.passwordCheck(
+            password,
+            'tbMatKhau',
+            '(chứa ít nhất 1 ký tự số, 1 ký tự thường, 1 ký tự in hoa, 1 ký tự đặc biệt, không chứa khoảng trắng)'
+        );
 
     isValid &=
         validation.emptyCheck(workDate, 'tbNgay', 'Vui lòng nhập ngày') &&
         validation.dateFormatCheck(workDate, 'tbNgay', 'Ngày không hợp lệ');
 
-    isValid &= validation.emptyCheck(basicSalary, 'tbLuongCB', 'Vui lòng nhập lương cơ bản');
+    isValid &=
+        validation.emptyCheck(basicSalary, 'tbLuongCB', 'Vui lòng nhập lương cơ bản') &&
+        validation.allNumberCheck(basicSalary, 'tbLuongCB', 'Vui lòng nhập số!') &&
+        validation.basicSalaryCheck(basicSalary, 'tbLuongCB', 'Nhập số lương: ', 1000000, 20000000);
 
     isValid &= validation.positionCheck('tbChucVu', 'Vui lòng chọn chức vụ');
 
@@ -96,6 +116,7 @@ function handleEdit(employeeId) {
     const selectedEmployee = employees.editEmployee(employeeId);
     getEl('account').disabled = true;
     getEl('account').value = selectedEmployee.account;
+    console.log('account of editing', selectedEmployee.account);
     getEl('fullName').value = selectedEmployee.fullName;
     getEl('email').value = selectedEmployee.email;
     getEl('password').value = selectedEmployee.password;
@@ -116,9 +137,12 @@ function handleUpdate(employeeId) {
     const updatedEmployee = createEmployee(employeeId);
 
     if (!updatedEmployee) {
+        console.log('Update khong thanh cong');
         isEditing = true;
         return;
     }
+
+    console.log('Update thanh cong');
 
     $('#myModal').modal('hide');
 
@@ -159,10 +183,9 @@ function renderUI(data) {
     getEl('tableDanhSach').innerHTML = content;
 
     let currentlyEditedEmployeeId = null;
+
     getEl('tableDanhSach').addEventListener('click', event => {
         const target = event.target;
-
-        console.log(currentlyEditedEmployeeId);
 
         // Check if the clicked element is a delete button
         if (target.classList.contains('delete-btn')) {
@@ -172,8 +195,12 @@ function renderUI(data) {
 
         // Check if the clicked element is an edit button
         if (target.classList.contains('edit-btn')) {
+            if (!isEditing) hideAllErrorMessages();
+
             target.setAttribute('data-toggle', 'modal');
             target.setAttribute('data-target', '#myModal');
+
+            isEditing = true;
 
             const employeeId = target.dataset.id;
 
@@ -183,25 +210,21 @@ function renderUI(data) {
 
             currentlyEditedEmployeeId = employeeId;
 
-            document.querySelectorAll('.sp-thongbao').forEach(span => {
-                if (span.innerHTML.trim() !== '') {
-                    span.style.display = 'none';
-                }
-            });
-
+            hideAllErrorMessages();
             handleEdit(employeeId);
         }
+    });
+
+    $('#myModal').on('hidden.bs.modal', function () {
+        // Reset the currentlyEditedEmployeeId when the modal is closed
+        currentlyEditedEmployeeId = null;
     });
 }
 
 // Events
 getEl('btnAddEmployeeOpen').addEventListener('click', () => {
     if (isEditing) {
-        document.querySelectorAll('.sp-thongbao').forEach(span => {
-            if (span.innerHTML.trim() !== '') {
-                span.style.display = 'none';
-            }
-        });
+        hideAllErrorMessages();
         getEl('btnUpdate').style.display = 'none';
         getEl('btnAddEmployee').style.display = 'inline-block';
         clearField();
@@ -213,6 +236,8 @@ getEl('btnAddEmployee').addEventListener('click', () => {
     const employee = createEmployee();
 
     if (!employee) return;
+
+    // hideAllErrorMessages();
 
     employees.addEmployee(employee);
 
@@ -258,6 +283,12 @@ function clearField() {
     getEl('basicSalary').value = '';
     getEl('position').value = getEl('position')[0].value;
     getEl('workHours').value = '';
+}
+
+function hideAllErrorMessages() {
+    document.querySelectorAll('.sp-thongbao').forEach(span => {
+        span.style.display = 'none';
+    });
 }
 
 // (function () {

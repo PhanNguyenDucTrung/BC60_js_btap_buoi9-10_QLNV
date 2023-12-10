@@ -80,6 +80,15 @@ function Validation() {
         return true;
     };
 
+    this.basicSalaryCheck = function (value, spanId, mess, min, max) {
+        if (!(min <= Number(value) && Number(value) <= max)) {
+            getEl(spanId).innerHTML = mess + min + ' - ' + max;
+            return false;
+        }
+        getEl(spanId).innerHTML = '';
+        return true;
+    };
+
     this.workHoursCheck = function (value, spanId, mess, min, max) {
         if (!(Number(value) >= 80 && Number(value) <= 200)) {
             getEl(spanId).innerHTML = mess;
@@ -90,10 +99,20 @@ function Validation() {
     };
 
     this.existingAccountCheck = function (value, employees, spanId, mess) {
-        console.log(value);
         const isDuplicateAccount = employees.some(account => account.account === value);
         // console.log(isDuplicateAccount);
         if (isDuplicateAccount) {
+            getEl(spanId).innerHTML = mess;
+            return false;
+        }
+        getEl(spanId).innerHTML = '';
+        return true;
+    };
+
+    this.existingEmailCheck = function (value, employees, spanId, mess) {
+        console.log(value);
+        const isDuplicateEmail = employees.some(account => account.email === value);
+        if (isDuplicateEmail) {
             getEl(spanId).innerHTML = mess;
             return false;
         }
