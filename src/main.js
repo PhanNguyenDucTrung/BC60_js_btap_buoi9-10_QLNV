@@ -148,6 +148,7 @@ function handleUpdate(employeeId) {
 
     isEditing = false;
     clearField();
+    hideAllErrorMessages();
     employees.updateEmployee(updatedEmployee);
 
     setLocalStorage();
@@ -237,7 +238,7 @@ getEl('btnAddEmployee').addEventListener('click', () => {
 
     if (!employee) return;
 
-    // hideAllErrorMessages();
+    hideAllErrorMessages();
 
     employees.addEmployee(employee);
 
@@ -288,6 +289,7 @@ function clearField() {
 function hideAllErrorMessages() {
     document.querySelectorAll('.sp-thongbao').forEach(span => {
         span.style.display = 'none';
+        span.innerHTML = '';
     });
 }
 
